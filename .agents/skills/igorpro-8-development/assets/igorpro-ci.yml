@@ -1,0 +1,87 @@
+# Skill 配布用テンプレート。使用先リポジトリにコピーするまで Actions は動きません。
+# Private リポジトリでは追加・有効化前に必ずユーザーの許可を得てください。
+name: Igor Pro 8 static checks
+
+on:
+  pull_request:
+    paths:
+      - '**/*.ipf'
+      - '.github/workflows/igorpro.yml'
+  push:
+    paths:
+      - '**/*.ipf'
+      - '.github/workflows/igorpro.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download official Linux IPT
+        shell: bash
+        run: |
+          set -euo pipefail
+          IPT_URL="$(python3 - <<'PY'
+          from html.parser import HTMLParser
+          from urllib.parse import urljoin, urlparse
+          from urllib.request import urlopen
+          import re
+
+          BASE = "https://docs.byte-physics.de/ipt/"
+
+          class LinkParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.urls = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag != "a":
+                      return
+                  href = dict(attrs).get("href")
+                  if not href:
+                      return
+                  url = urljoin(BASE, href)
+                  parsed = urlparse(url)
+                  if (parsed.scheme == "https"
+                      and parsed.netloc == "docs.byte-physics.de"
+                      and re.fullmatch(r"/ipt/_static/binary/[^/]+/linux/ipt", parsed.path)):
+                      self.urls.append(url)
+
+          parser = LinkParser()
+          with urlopen(BASE, timeout=30) as response:
+              parser.feed(response.read().decode("utf-8"))
+          if not parser.urls:
+              raise SystemExit("公式サイトでLinux版IPTの配布URLが見つかりません")
+          print(parser.urls[0])
+          PY
+          )"
+          mkdir -p "$HOME/.local/bin"
+          curl --proto '=https' --tlsv1.2 -fsSL "$IPT_URL" -o "$HOME/.local/bin/ipt"
+          chmod 0755 "$HOME/.local/bin/ipt"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/ipt" --version || {
+            echo "::error::IPT起動失敗。期限切れや依存関係を確認してください"
+            exit 1
+          }
+
+      - name: Check tracked .ipf files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git ls-files -- '*.ipf')" ]; then
+            echo "No .ipf files tracked."
+            exit 0
+          fi
+          while IFS= read -r -d '' file; do
+            echo "::group::$file"
+            ipt check "$file"
+            ipt lint "$file"
+            echo "::endgroup::"
+          done < <(git ls-files -z -- '*.ipf')

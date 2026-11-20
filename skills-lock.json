@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "igorpro-8-development": {
+      "source": "assb-lab/igorpro-dev-skills",
+      "commit": "5c8b39767681fd655fbf9c1f470e93b2af9d615f",
+      "sourceType": "github",
+      "skillPath": "skills/igorpro-8-development/SKILL.md",
+      "computedHash": "e057e5786a63ad9932ab7e84ce70f75efa7a86dd6be83cd656e6aa4cb27bacc1"
+    }
+  }
+}
