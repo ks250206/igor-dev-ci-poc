@@ -157,10 +157,8 @@ End
 Function Lissajous_SetVarProc(STRUCT WMSetVariableAction &sva) : SetVariableControl
 
 	switch(sva.eventCode)
-		case 1: // mouse up (矢印クリック)
-			// fallthrough
-		case 2: // Enter キー
-			// fallthrough
+		case 1: // fallthrough, mouse up (矢印クリック)
+		case 2: // fallthrough, Enter キー
 		case 3: // Live update
 			UpdateCurve()
 			break
