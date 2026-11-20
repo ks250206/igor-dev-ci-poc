@@ -1,5 +1,6 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals = 3
+#pragma rtFunctionErrors = 1
 #pragma IgorVersion = 8.04
 #pragma version = 1.0
 
@@ -23,6 +24,7 @@ End
 
 // グローバル変数を保持するデータフォルダを返す (無ければ作成)
 static Function/DF GetPackageDF()
+
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:Lissajous
 	DFREF dfr = root:Packages:Lissajous
@@ -45,6 +47,7 @@ End
 
 // 現在のパラメータでリサージュ曲線のウェーブを計算する
 static Function ComputeCurve()
+
 	DFREF dfr = GetPackageDF()
 	NVAR gA = dfr:gA
 	NVAR gB = dfr:gB
@@ -67,6 +70,7 @@ End
 
 // グラフを作成 (既にあれば前面へ)
 static Function ShowGraph()
+
 	DoWindow/F $kGraphName
 	if(V_flag)
 		return 0
@@ -97,6 +101,7 @@ End
 
 // 再計算 (グラフは表示中のウェーブを参照しているので自動的に再描画される)
 static Function UpdateCurve()
+
 	ComputeCurve()
 	DoUpdate
 	return 0
@@ -104,6 +109,7 @@ End
 
 // パネルを開く
 Function Lissajous_ShowPanel()
+
 	DoWindow/F $kPanelName
 	if(V_flag)
 		return 0
@@ -133,13 +139,14 @@ Function Lissajous_ShowPanel()
 End
 
 // "Draw Lissajous" ボタン
-Function Lissajous_DrawButtonProc(ba) : ButtonControl
-	STRUCT WMButtonAction &ba
+Function Lissajous_DrawButtonProc(STRUCT WMButtonAction &ba) : ButtonControl
 
 	switch(ba.eventCode)
 		case 2: // mouse up
 			ComputeCurve()
 			ShowGraph()
+			break
+		default:
 			break
 	endswitch
 
@@ -147,14 +154,17 @@ Function Lissajous_DrawButtonProc(ba) : ButtonControl
 End
 
 // a / b / delta の変更に追従してグラフを更新
-Function Lissajous_SetVarProc(sva) : SetVariableControl
-	STRUCT WMSetVariableAction &sva
+Function Lissajous_SetVarProc(STRUCT WMSetVariableAction &sva) : SetVariableControl
 
 	switch(sva.eventCode)
 		case 1: // mouse up (矢印クリック)
+			// fallthrough
 		case 2: // Enter キー
+			// fallthrough
 		case 3: // Live update
 			UpdateCurve()
+			break
+		default:
 			break
 	endswitch
 
